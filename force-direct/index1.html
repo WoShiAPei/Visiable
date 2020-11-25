@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+circle {
+  stroke-width: 1.5px;
+}
+
+line {
+  stroke: #999;
+}
+
+.mouseover {
+  fill: none;
+  stroke: #ff0000;
+  stroke-width: 2.5px;
+}
+
+.click {
+  fill: none;
+  stroke: #ff0000;
+  stroke-width: 10px;
+}
+
+</style>
+<body>
+<script src="https://d3js.org/d3.v3.min.js"></script>
+<script>
+
+    
+var count = 0;
+
+var width = 1980,
+    height = 1080,
+    radius = 6;
+
+var fill = d3.scale.category20();
+
+var force = d3.layout.force()
+    .gravity(.05)
+    .charge(-240)
+    .linkDistance(200)
+    .size([width, height])
+    .on("tick",tick);
+
+
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var link = svg.selectAll("line"),node = svg.selectAll("circle");
+
+d3.json("graph1.json", function(error, json) {
+  if (error) throw error;
+
+  graph = json;
+  update();
+});
+
+function update(){
+
+    force
+      .nodes(graph.nodes)
+      .links(graph.links)
+      .start();
+   link = link
+      .data(graph.links)
+    .enter().append("line");
+
+  node = node
+      .data(graph.nodes)
+    .enter().append("circle")
+      .attr("r", radius - .75)
+      .style("fill", function(d) { return fill(d.group); })
+      .style("stroke", function(d) { return d3.rgb(fill(d.group)).darker(); })
+      .call(force.drag);
+
+      node.on('click',function(d,i){
+          d3.select(this).classed('click',true);
+      });
+
+      node.on('click',click);
+    console.log(link);
+
+}
+
+
+function click(d) {
+    if (d3.event.defaultPrevented) return; // ignore drag
+    if(count!=2){
+        count++;
+        return ;
+    }
+    d3.select(this).classed('click',true);
+    for(var i = 0;i<graph.links.length;i++){
+        if(graph.links[i].source == d || graph.links[i].target == d){
+            console.log(link[0][i]);
+            d3.select(link[0][i]).classed('mouseover',true);
+        }
+         
+    }
+    //update();
+    // force
+    //   .nodes(graph.nodes)
+    //   .links(graph.links)
+    //   .on("tick", tick1)
+    //   .start();
+   }
+
+
+function tick() {
+    node.attr("cx", function(d) { return d.x = Math.max(radius, Math.min(width - radius, d.x)); })
+        .attr("cy", function(d) { return d.y = Math.max(radius, Math.min(height - radius, d.y)); });
+
+    link.attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; });
+  }
+
+
+
+
+
+// Toggle children on click.
+
+
+</script>
+</body>
+</html>
